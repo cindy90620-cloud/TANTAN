@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>暹羅貓分帳本 · MeeMee Split</title>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="暹羅貓分帳本" />
+  <meta name="theme-color" content="#FAF6F0" />
+  <link rel="apple-touch-icon" sizes="512x512" href="./apple-touch-icon.png" />
+  <link rel="icon" type="image/png" href="./apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --bg-cream: #FAF6F0;
+      --paper-card: rgba(255, 253, 249, 0.94);
+      --seal-dark: #4A3226;
+      --seal-mid: #6E4E3E;
+      --seal-light: #9E7E6B;
+      --caramel: #C89D7C;
+      --caramel-soft: #F3E5D8;
+      --sapphire: #6B9AC4;
+      --line-green: #06C755;
+      --border-soft: rgba(158, 126, 107, 0.22);
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100dvh;
+      background-color: #EFE8DD;
+      font-family: 'Nunito', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--seal-dark);
+      overflow-x: hidden;
+    }
+    .app-shell {
+      position: relative;
+      width: 100%;
+      max-width: 430px;
+      min-height: 100dvh;
+      margin: 0 auto;
+      background-color: var(--bg-cream);
+      background-image:
+        radial-gradient(circle at 12% 10%, rgba(200, 157, 124, 0.22) 0%, transparent 45%),
+        radial-gradient(circle at 88% 24%, rgba(107, 154, 196, 0.18) 0%, transparent 48%),
+        radial-gradient(circle at 22% 82%, rgba(217, 167, 156, 0.2) 0%, transparent 46%);
+      box-shadow: 0 12px 40px rgba(74, 50, 38, 0.12);
+      display: flex;
+      flex-direction: column;
+    }
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 12px 16px;
+      background: rgba(250, 246, 240, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px dashed var(--border-soft);
+    }
+    .brand-wrap { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .brand-title { font-size: 16px; font-weight: 900; color: var(--seal-dark); white-space: nowrap; }
+    .brand-sub { font-size: 11px; color: var(--seal-light); font-weight: 700; }
+    .top-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .pill-btn {
+      border: 1px solid var(--border-soft);
+      background: #FFFDF9;
+      color: var(--seal-mid);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 6px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .pill-btn:active { transform: scale(0.95); }
+    .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #48BB78; display: inline-block; }
+    .main-scroll { flex: 1; overflow-y: auto; padding: 14px 16px 112px; -webkit-overflow-scrolling: touch; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .card {
+      background: var(--paper-card);
+      border: 1.5px solid var(--border-soft);
+      border-radius: 22px 26px 24px 20px / 24px 20px 26px 22px;
+      padding: 14px;
+      box-shadow: 0 6px 18px rgba(74, 50, 38, 0.05);
+      margin-bottom: 12px;
+    }
+    .section-label {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--seal-mid);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .amount-keypad-grid { display: grid; grid-template-columns: 42% 1fr; gap: 10px; align-items: stretch; }
+    .amount-display-box {
+      background: linear-gradient(155deg, #FBF2E8 0%, #F3E2D0 100%);
+      border: 1.5px solid rgba(200, 157, 124, 0.45);
+      border-radius: 18px;
+      padding: 12px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .currency-tag { font-size: 11px; font-weight: 900; color: var(--seal-mid); }
+    .amount-value { font-size: 28px; font-weight: 900; color: var(--seal-dark); line-height: 1.15; word-break: break-all; margin: 8px 0; }
+    .quick-add-row { display: flex; gap: 5px; }
+    .quick-add-btn {
+      flex: 1;
+      border: none;
+      background: rgba(255, 255, 255, 0.85);
+      color: var(--seal-dark);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 6px 2px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .key-btn {
+      border: 1px solid var(--border-soft);
+      background: #FFFDF9;
+      color: var(--seal-dark);
+      font-size: 17px;
+      font-weight: 800;
+      height: 40px;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 2px 0 rgba(158, 126, 107, 0.18);
+    }
+    .key-btn:active { transform: translateY(2px); box-shadow: none; }
+    .key-btn.key-fn { background: var(--caramel-soft); color: var(--seal-mid); font-size: 14px; }
+    .text-input {
+      width: 100%;
+      border: 1.5px solid var(--border-soft);
+      background: #FFFDF9;
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--seal-dark);
+      outline: none;
+      font-family: inherit;
+    }
+    .chips-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .chip-btn {
+      border: 1px solid var(--border-soft);
+      background: #FAF3EA;
+      color: var(--seal-mid);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .payer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .payer-card {
+      border: 2px solid var(--border-soft);
+      background: #FFFDF9;
+      border-radius: 18px;
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+    .payer-card.selected {
+      border-color: var(--seal-dark);
+      background: linear-gradient(180deg, #FFFDF9 0%, #F5E6D8 100%);
+      box-shadow: 0 4px 12px rgba(74, 50, 38, 0.12);
+    }
+    .payer-name { font-size: 14px; font-weight: 900; color: var(--seal-dark); }
+    .payer-badge { font-size: 11px; font-weight: 700; color: var(--seal-light); }
+    .primary-btn {
+      width: 100%;
+      border: none;
+      background: linear-gradient(135deg, #5C4033 0%, #432C21 100%);
+      color: #FFFDF9;
+      font-size: 16px;
+      font-weight: 900;
+      padding: 14px;
+      border-radius: 18px;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(74, 50, 38, 0.24);
+      margin-bottom: 10px;
+    }
+    .secondary-nav-btn {
+      width: 100%;
+      border: 1.5px dashed var(--caramel);
+      background: rgba(255, 253, 249, 0.9);
+      color: var(--seal-dark);
+      font-size: 14px;
+      font-weight: 800;
+      padding: 12px;
+      border-radius: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .badge-count { background: var(--sapphire); color: #fff; font-size: 11px; font-weight: 900; padding: 2px 8px; border-radius: 999px; }
+    .settle-hero {
+      background: linear-gradient(145deg, #5C4033 0%, #3E2920 100%);
+      color: #FFFDF9;
+      border-radius: 24px;
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .settle-result-title { font-size: 13px; opacity: 0.88; font-weight: 700; margin-top: 4px; }
+    .settle-result-amount { font-size: 30px; font-weight: 900; color: #F9D8B8; margin: 4px 0 10px; }
+    .stat-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: left; }
+    .stat-box { background: rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 9px 10px; }
+    .stat-name { font-size: 12px; font-weight: 800; color: #F3DFC8; }
+    .stat-detail { font-size: 11px; opacity: 0.9; margin-top: 2px; line-height: 1.4; }
+    .action-stack { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .line-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      text-decoration: none;
+      background: var(--line-green);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 900;
+      padding: 13px;
+      border-radius: 16px;
+      border: none;
+      cursor: pointer;
+    }
+    .two-col-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .soft-btn {
+      border: 1.5px solid var(--border-soft);
+      background: #FFFDF9;
+      color: var(--seal-dark);
+      font-size: 13px;
+      font-weight: 800;
+      padding: 10px;
+      border-radius: 14px;
+      cursor: pointer;
+    }
+    .soft-btn.danger { color: #B84A39; border-color: rgba(184, 74, 57, 0.28); background: #FFF7F5; }
+    .expense-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--border-soft);
+      gap: 8px;
+    }
+    .expense-item:last-child { border-bottom: none; }
+    .exp-title { font-size: 14px; font-weight: 800; color: var(--seal-dark); }
+    .exp-meta { font-size: 11px; color: var(--seal-light); font-weight: 700; margin-top: 2px; }
+    .exp-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .exp-amt { font-size: 15px; font-weight: 900; color: var(--seal-dark); }
+    .del-btn {
+      border: none;
+      background: #F5EAE2;
+      color: var(--seal-mid);
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .ratio-header { display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 900; margin-bottom: 8px; }
+    input[type="range"] { width: 100%; accent-color: var(--seal-dark); margin: 6px 0 10px; }
+    .preset-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .preset-btn {
+      flex: 1;
+      min-width: 58px;
+      border: 1px solid var(--border-soft);
+      background: #FAF3EA;
+      color: var(--seal-dark);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 7px 4px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .preset-btn.active { background: var(--seal-dark); color: #fff; border-color: var(--seal-dark); }
+    .cat-style-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 6px; }
+    .cat-style-btn {
+      border: 1.5px solid var(--border-soft);
+      background: #FFFDF9;
+      border-radius: 12px;
+      padding: 6px 2px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--seal-mid);
+      cursor: pointer;
+      text-align: center;
+    }
+    .cat-style-btn.active { border-color: var(--seal-dark); background: var(--caramel-soft); color: var(--seal-dark); }
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 430px;
+      background: rgba(255, 253, 249, 0.96);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border-soft);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+      z-index: 40;
+    }
+    .nav-item {
+      border: none;
+      background: transparent;
+      color: var(--seal-light);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .nav-item.active { color: var(--seal-dark); }
+    .nav-icon { font-size: 18px; }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(45, 30, 22, 0.52);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 60;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-card {
+      width: 100%;
+      max-width: 390px;
+      background: #FFFDF9;
+      border-radius: 24px;
+      padding: 18px;
+      border: 2px solid var(--caramel);
+      max-height: 86dvh;
+      overflow-y: auto;
+    }
+    .modal-title { font-size: 17px; font-weight: 900; color: var(--seal-dark); margin: 0 0 8px; }
+    .modal-desc { font-size: 13px; color: var(--seal-mid); line-height: 1.5; margin: 0 0 12px; }
+    .textarea-preview {
+      width: 100%;
+      min-height: 150px;
+      border: 1.5px solid var(--border-soft);
+      border-radius: 14px;
+      padding: 10px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--seal-dark);
+      background: #FAF6F0;
+      margin-bottom: 10px;
+    }
+    .toast {
+      position: fixed;
+      top: 66px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-12px);
+      background: var(--seal-dark);
+      color: #FFFDF9;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 9px 16px;
+      border-radius: 999px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.22s ease;
+      z-index: 80;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="top-bar">
+      <div class="brand-wrap">
+        <span style="font-size:22px;">🐱</span>
+        <div>
+          <div class="brand-title">暹羅貓分帳本</div>
+          <div class="brand-sub" id="header-ratio-hint">目前分帳比例 50% : 50%</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button type="button" class="pill-btn" data-action="open-sync-modal">
+          <span class="sync-dot"></span>
+          <span id="room-badge-text">CAT520</span>
+        </button>
+      </div>
+    </header>
+
+    <div id="toast" class="toast">已儲存！</div>
+
+    <main class="main-scroll">
+      <section id="page-add" class="page active">
+        <div class="card">
+          <div class="section-label">
+            <span>💰 輸入消費金額</span>
+            <span style="font-size:11px; color:var(--seal-light);">點擊右側數字鍵盤</span>
+          </div>
+          <div class="amount-keypad-grid">
+            <div class="amount-display-box">
+              <div class="currency-tag">NT$ 金額</div>
+              <div id="amount-display" class="amount-value">0</div>
+              <div class="quick-add-row">
+                <button type="button" class="quick-add-btn" data-action="quick-add" data-val="100">+100</button>
+                <button type="button" class="quick-add-btn" data-action="quick-add" data-val="500">+500</button>
+              </div>
+            </div>
+            <div class="keypad-grid">
+              <button type="button" class="key-btn" data-action="key" data-key="7">7</button>
+              <button type="button" class="key-btn" data-action="key" data-key="8">8</button>
+              <button type="button" class="key-btn" data-action="key" data-key="9">9</button>
+              <button type="button" class="key-btn" data-action="key" data-key="4">4</button>
+              <button type="button" class="key-btn" data-action="key" data-key="5">5</button>
+              <button type="button" class="key-btn" data-action="key" data-key="6">6</button>
+              <button type="button" class="key-btn" data-action="key" data-key="1">1</button>
+              <button type="button" class="key-btn" data-action="key" data-key="2">2</button>
+              <button type="button" class="key-btn" data-action="key" data-key="3">3</button>
+              <button type="button" class="key-btn key-fn" data-action="key" data-key="C">C</button>
+              <button type="button" class="key-btn" data-action="key" data-key="0">0</button>
+              <button type="button" class="key-btn key-fn" data-action="key" data-key="BACK">⌫</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-label">
+            <span>🐾 消費項目（選填，留空記為日常支出）</span>
+          </div>
+          <input id="note-input" type="text" class="text-input" placeholder="例如：晚餐、咖啡、貓砂..." />
+          <div class="chips-row">
+            <button type="button" class="chip-btn" data-action="set-note" data-note="晚餐">🍽️ 晚餐</button>
+            <button type="button" class="chip-btn" data-action="set-note" data-note="咖啡甜點">☕ 咖啡甜點</button>
+            <button type="button" class="chip-btn" data-action="set-note" data-note="買菜日用品">🛒 買菜日用品</button>
+            <button type="button" class="chip-btn" data-action="set-note" data-note="交通車資">🚕 交通</button>
+            <button type="button" class="chip-btn" data-action="set-note" data-note="貓咪用品">🐟 貓咪用品</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-label">
+            <span>🐱 誰先墊付這筆錢？</span>
+          </div>
+          <div class="payer-grid">
+            <div id="payer-btn-a" class="payer-card selected" data-action="select-payer" data-payer="A">
+              <div id="avatar-a" style="font-size:30px;">🐱</div>
+              <div id="payer-name-a" class="payer-name">海豹小貓</div>
+              <div id="payer-ratio-a" class="payer-badge">負擔 50%</div>
+            </div>
+            <div id="payer-btn-b" class="payer-card" data-action="select-payer" data-payer="B">
+              <div id="avatar-b" style="font-size:30px;">🐈</div>
+              <div id="payer-name-b" class="payer-name">藍眼小貓</div>
+              <div id="payer-ratio-b" class="payer-badge">負擔 50%</div>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="primary-btn" data-action="save-expense">記錄這筆帳 🐾</button>
+        <button type="button" class="secondary-nav-btn" data-action="nav" data-page="settle">
+          <span>前往結算頁面查看明細</span>
+          <span id="unsettled-pill" class="badge-count">0 筆未結清</span>
+          <span>→</span>
+        </button>
+      </section>
+
+      <section id="page-settle" class="page">
+        <div class="settle-hero">
+          <div style="font-size:28px;">🐱❤️🐈</div>
+          <div id="settle-headline" class="settle-result-title">目前雙方帳目已平衡</div>
+          <div id="settle-amount" class="settle-result-amount">NT$ 0</div>
+          <div class="stat-pair">
+            <div class="stat-box">
+              <div id="stat-name-a" class="stat-name">海豹小貓</div>
+              <div id="stat-detail-a" class="stat-detail">已墊付 $0<br/>應負擔 $0</div>
+            </div>
+            <div class="stat-box">
+              <div id="stat-name-b" class="stat-name">藍眼小貓</div>
+              <div id="stat-detail-b" class="stat-detail">已墊付 $0<br/>應負擔 $0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-stack">
+          <a id="line-direct-link" class="line-btn" href="https://line.me/R/share?text=" target="_blank" rel="noopener noreferrer" data-action="send-line">
+            <span>💬 LINE 一鍵送出對帳單</span>
+          </a>
+          <div class="two-col-btns">
+            <button type="button" class="soft-btn" data-action="open-line-modal">📋 預覽 / 複製明細</button>
+            <button type="button" class="soft-btn danger" data-action="settle-all">✨ 一鍵結清全部</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-label">
+            <span>🧾 未結清支出明細</span>
+            <span id="total-spent-label">總支出 $0</span>
+          </div>
+          <div id="expense-list"></div>
+        </div>
+      </section>
+
+      <section id="page-settings" class="page">
+        <div class="card">
+          <div class="section-label"><span>⚖️ 預設分帳比例設定</span></div>
+          <div class="ratio-header">
+            <span id="ratio-label-a">海豹小貓 50%</span>
+            <span id="ratio-label-b">藍眼小貓 50%</span>
+          </div>
+          <input id="ratio-slider" type="range" min="0" max="100" step="5" value="50" />
+          <div class="preset-row">
+            <button type="button" class="preset-btn" data-action="set-ratio" data-ratio="50">50/50</button>
+            <button type="button" class="preset-btn" data-action="set-ratio" data-ratio="60">60/40</button>
+            <button type="button" class="preset-btn" data-action="set-ratio" data-ratio="70">70/30</button>
+            <button type="button" class="preset-btn" data-action="set-ratio" data-ratio="80">80/20</button>
+            <button type="button" class="preset-btn" data-action="set-ratio" data-ratio="100">100/0</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-label"><span>🐱 雙方暱稱與暹羅貓花色</span></div>
+          <div style="margin-bottom:10px;">
+            <input id="input-name-a" type="text" class="text-input" placeholder="小貓 A 暱稱" />
+            <div class="cat-style-grid" data-target="A">
+              <button type="button" class="cat-style-btn active" data-action="set-icon" data-who="A" data-icon="🐱">海豹重點</button>
+              <button type="button" class="cat-style-btn" data-action="set-icon" data-who="A" data-icon="🐈">藍重點色</button>
+              <button type="button" class="cat-style-btn" data-action="set-icon" data-who="A" data-icon="😺">巧克力色</button>
+              <button type="button" class="cat-style-btn" data-action="set-icon" data-who="A" data-icon="😻">丁香重點</button>
+            </div>
+          </div>
+          <div>
+            <input id="input-name-b" type="text" class="text-input" placeholder="小貓 B 暱稱" />
+            <div class="cat-style-grid" data-target="B">
+              <button type="button" class="cat-style-btn" data-action="set-icon" data-who="B" data-icon="🐱">海豹重點</button>
+              <button type="button" class="cat-style-btn active" data-action="set-icon" data-who="B" data-icon="🐈">藍重點色</button>
+              <button type="button" class="cat-style-btn" data-action="set-icon" data-who="B" data-icon="😺">巧克力色</button>
+              <button type="button" class="cat-style-btn" data-action="set-icon" data-who="B" data-icon="😻">丁香重點</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-label"><span>🔗 情侶雙機連線配對</span></div>
+          <p style="font-size:12px; color:var(--seal-mid); margin:0 0 8px; line-height:1.5;">
+            輸入相同的 6 碼房間代碼，或將邀請網址傳給另一半，即可在兩支手機共用同一本帳本。
+          </p>
+          <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <input id="room-code-input" type="text" maxlength="6" class="text-input" style="text-transform:uppercase; letter-spacing:2px; font-weight:900;" />
+            <button type="button" class="soft-btn" style="white-space:nowrap;" data-action="apply-room">套用代碼</button>
+          </div>
+          <button type="button" class="soft-btn" style="width:100%;" data-action="copy-invite">📋 複製雙機邀請連結</button>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav">
+      <button type="button" class="nav-item active" data-action="nav" data-page="add" id="nav-add">
+        <span class="nav-icon">✏️</span>
+        <span>記一筆</span>
+      </button>
+      <button type="button" class="nav-item" data-action="nav" data-page="settle" id="nav-settle">
+        <span class="nav-icon">🧾</span>
+        <span>結算</span>
+      </button>
+      <button type="button" class="nav-item" data-action="nav" data-page="settings" id="nav-settings">
+        <span class="nav-icon">⚙️</span>
+        <span>比例設定</span>
+      </button>
+    </nav>
+  </div>
+
+  <div id="line-modal" class="modal-backdrop">
+    <div class="modal-card">
+      <h3 class="modal-title">💬 LINE 對帳單預覽與傳送</h3>
+      <p class="modal-desc">系統已自動複製對帳單文字，你也可以微調後直接透過 LINE 傳給另一半：</p>
+      <textarea id="line-preview-text" class="textarea-preview"></textarea>
+      <div class="action-stack" style="margin-bottom:0;">
+        <a id="modal-line-share" class="line-btn" href="https://line.me/R/share?text=" target="_blank" rel="noopener noreferrer">開啟 LINE 選擇好友傳送 →</a>
+        <div class="two-col-btns">
+          <button type="button" class="soft-btn" data-action="copy-line-text">📋 再次複製文字</button>
+          <button type="button" class="soft-btn" data-action="close-modals">關閉</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sync-modal" class="modal-backdrop">
+    <div class="modal-card">
+      <h3 class="modal-title">🔗 情侶雙機同步配對</h3>
+      <p class="modal-desc">目前房間代碼：<b id="modal-room-code">CAT520</b><br/>把邀請連結傳給另一半，雙方輸入相同代碼即可同步資料。</p>
+      <div class="action-stack" style="margin-bottom:0;">
+        <button type="button" class="primary-btn" style="margin-bottom:0;" data-action="copy-invite">📋 複製雙機邀請連結</button>
+        <button type="button" class="soft-btn" data-action="close-modals">關閉</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = 'meemee_split_v1';
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlRoom = (urlParams.get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+
+      let state = {
+        room: urlRoom || 'CAT520',
+        ratioA: 50,
+        nameA: '海豹小貓',
+        nameB: '藍眼小貓',
+        iconA: '🐱',
+        iconB: '🐈',
+        expenses: []
+      };
+
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+        if (saved && typeof saved === 'object') {
+          state = Object.assign(state, saved);
+          if (urlRoom) state.room = urlRoom;
+        }
+      } catch (e) {}
+
+      let currentAmount = '0';
+      let selectedPayer = 'A';
+
+      function saveState() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+      }
+
+      function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(window.__toastTimer);
+        window.__toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+      }
+
+      function buildLineReportText() {
+        const unsettled = state.expenses.filter(x => !x.settled);
+        const ratioA = state.ratioA / 100;
+        let paidA = 0, paidB = 0, total = 0;
+
+        unsettled.forEach(item => {
+          total += item.amount;
+          if (item.payer === 'A') paidA += item.amount;
+          else paidB += item.amount;
+        });
+
+        const shouldA = Math.round(total * ratioA);
+        const shouldB = total - shouldA;
+        const diffA = paidA - shouldA;
+
+        let settleLine = '目前雙方帳目已平衡 ✨';
+        if (diffA > 0) settleLine = `${state.nameB} 需轉帳給 ${state.nameA}：NT$ ${diffA.toLocaleString()}`;
+        else if (diffA < 0) settleLine = `${state.nameA} 需轉帳給 ${state.nameB}：NT$ ${Math.abs(diffA).toLocaleString()}`;
+
+        const lines = [
+          `🐱 暹羅貓分帳本對帳單（比例 ${state.ratioA}% : ${100 - state.ratioA}%）`,
+          `━━━━━━━━━━━━━━`,
+          `💰 結算結果：${settleLine}`,
+          `• ${state.nameA}：已墊付 $${paidA.toLocaleString()} / 應負擔 $${shouldA.toLocaleString()}`,
+          `• ${state.nameB}：已墊付 $${paidB.toLocaleString()} / 應負擔 $${shouldB.toLocaleString()}`,
+          `━━━━━━━━━━━━━━`,
+          `🧾 未結清明細（共 ${unsettled.length} 筆，總計 $${total.toLocaleString()}）：`
+        ];
+
+        if (unsettled.length === 0) lines.push('（目前沒有未結清項目）');
+        else {
+          unsettled.forEach((item, idx) => {
+            const who = item.payer === 'A' ? state.nameA : state.nameB;
+            lines.push(`${idx + 1}. ${item.note} $${item.amount.toLocaleString()}（${who}先付）`);
+          });
+        }
+        return lines.join('
+');
+      }
+
+      function copyTextSafe(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).catch(() => {});
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); } catch (e) {}
+          document.body.removeChild(ta);
+        }
+      }
+
+      function renderAll() {
+        const ratioB = 100 - state.ratioA;
+        document.getElementById('header-ratio-hint').textContent = `目前分帳比例 ${state.ratioA}% : ${ratioB}%`;
+        document.getElementById('room-badge-text').textContent = state.room;
+        document.getElementById('modal-room-code').textContent = state.room;
+        document.getElementById('room-code-input').value = state.room;
+
+        const disp = document.getElementById('amount-display');
+        const num = Number(currentAmount || 0);
+        disp.textContent = num.toLocaleString();
+        disp.style.fontSize = num >= 100000 ? '20px' : num >= 10000 ? '23px' : '28px';
+
+        document.getElementById('avatar-a').textContent = state.iconA;
+        document.getElementById('avatar-b').textContent = state.iconB;
+        document.getElementById('payer-name-a').textContent = state.nameA;
+        document.getElementById('payer-name-b').textContent = state.nameB;
+        document.getElementById('payer-ratio-a').textContent = `負擔 ${state.ratioA}%`;
+        document.getElementById('payer-ratio-b').textContent = `負擔 ${ratioB}%`;
+        document.getElementById('payer-btn-a').classList.toggle('selected', selectedPayer === 'A');
+        document.getElementById('payer-btn-b').classList.toggle('selected', selectedPayer === 'B');
+
+        const unsettled = state.expenses.filter(x => !x.settled);
+        document.getElementById('unsettled-pill').textContent = `${unsettled.length} 筆未結清`;
+
+        let paidA = 0, paidB = 0, total = 0;
+        unsettled.forEach(item => {
+          total += item.amount;
+          if (item.payer === 'A') paidA += item.amount;
+          else paidB += item.amount;
+        });
+        const shouldA = Math.round(total * (state.ratioA / 100));
+        const shouldB = total - shouldA;
+        const diffA = paidA - shouldA;
+
+        document.getElementById('stat-name-a').textContent = `${state.iconA} ${state.nameA}`;
+        document.getElementById('stat-detail-a').innerHTML = `已墊付 $${paidA.toLocaleString()}<br/>應負擔 $${shouldA.toLocaleString()}`;
+        document.getElementById('stat-name-b').textContent = `${state.iconB} ${state.nameB}`;
+        document.getElementById('stat-detail-b').innerHTML = `已墊付 $${paidB.toLocaleString()}<br/>應負擔 $${shouldB.toLocaleString()}`;
+        document.getElementById('total-spent-label').textContent = `總支出 $${total.toLocaleString()}`;
+
+        const headline = document.getElementById('settle-headline');
+        const settleAmt = document.getElementById('settle-amount');
+        if (diffA > 0) {
+          headline.textContent = `${state.nameB} 應轉帳給 ${state.nameA}`;
+          settleAmt.textContent = `NT$ ${diffA.toLocaleString()}`;
+        } else if (diffA < 0) {
+          headline.textContent = `${state.nameA} 應轉帳給 ${state.nameB}`;
+          settleAmt.textContent = `NT$ ${Math.abs(diffA).toLocaleString()}`;
+        } else {
+          headline.textContent = '目前雙方帳目已平衡';
+          settleAmt.textContent = 'NT$ 0';
+        }
+
+        const reportText = buildLineReportText();
+        const lineUrl = 'https://line.me/R/share?text=' + encodeURIComponent(reportText);
+        document.getElementById('line-direct-link').href = lineUrl;
+        document.getElementById('modal-line-share').href = lineUrl;
+        document.getElementById('line-preview-text').value = reportText;
+
+        const listEl = document.getElementById('expense-list');
+        if (unsettled.length === 0) {
+          listEl.innerHTML = '<div style="text-align:center; padding:18px 0; font-size:13px; color:var(--seal-light);">目前沒有未結清的支出紀錄 🐾</div>';
+        } else {
+          listEl.innerHTML = unsettled.slice().reverse().map(item => {
+            const who = item.payer === 'A' ? `${state.iconA} ${state.nameA}` : `${state.iconB} ${state.nameB}`;
+            return `
+              <div class="expense-item">
+                <div>
+                  <div class="exp-title">${escapeHtml(item.note)}</div>
+                  <div class="exp-meta">${who} 先付 · ${item.date || ''}</div>
+                </div>
+                <div class="exp-right">
+                  <div class="exp-amt">$${item.amount.toLocaleString()}</div>
+                  <button type="button" class="del-btn" data-action="delete-exp" data-id="${item.id}">✕</button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        document.getElementById('ratio-label-a').textContent = `${state.nameA} ${state.ratioA}%`;
+        document.getElementById('ratio-label-b').textContent = `${state.nameB} ${ratioB}%`;
+        document.getElementById('ratio-slider').value = state.ratioA;
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+          btn.classList.toggle('active', Number(btn.dataset.ratio) === state.ratioA);
+        });
+        document.getElementById('input-name-a').value = state.nameA;
+        document.getElementById('input-name-b').value = state.nameB;
+        document.querySelectorAll('.cat-style-btn').forEach(btn => {
+          const who = btn.dataset.who;
+          const activeIcon = who === 'A' ? state.iconA : state.iconB;
+          btn.classList.toggle('active', btn.dataset.icon === activeIcon);
+        });
+      }
+
+      function escapeHtml(str) {
+        return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+      }
+
+      function switchPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        const target = document.getElementById('page-' + pageId);
+        const nav = document.getElementById('nav-' + pageId);
+        if (target) target.classList.add('active');
+        if (nav) nav.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      document.addEventListener('click', function (e) {
+        const target = e.target.closest('[data-action]');
+        if (!target) {
+          if (e.target.classList.contains('modal-backdrop')) e.target.classList.remove('open');
+          return;
+        }
+        const action = target.dataset.action;
+
+        if (action === 'key') {
+          const k = target.dataset.key;
+          if (k === 'C') currentAmount = '0';
+          else if (k === 'BACK') currentAmount = currentAmount.length > 1 ? currentAmount.slice(0, -1) : '0';
+          else if (currentAmount.length < 7) currentAmount = currentAmount === '0' ? k : currentAmount + k;
+          renderAll();
+        } else if (action === 'quick-add') {
+          const add = Number(target.dataset.val || 0);
+          currentAmount = String(Math.min(9999999, Number(currentAmount || 0) + add));
+          renderAll();
+        } else if (action === 'set-note') {
+          document.getElementById('note-input').value = target.dataset.note;
+        } else if (action === 'select-payer') {
+          selectedPayer = target.dataset.payer;
+          renderAll();
+        } else if (action === 'save-expense') {
+          const amt = Number(currentAmount || 0);
+          if (amt <= 0) { showToast('請先輸入大於 0 的金額 🐾'); return; }
+          const rawNote = document.getElementById('note-input').value.trim();
+          const now = new Date();
+          state.expenses.push({
+            id: String(Date.now()),
+            amount: amt,
+            note: rawNote || '日常支出',
+            payer: selectedPayer,
+            date: `${now.getMonth() + 1}/${now.getDate()}`,
+            settled: false
+          });
+          currentAmount = '0';
+          document.getElementById('note-input').value = '';
+          saveState();
+          renderAll();
+          showToast('已記錄這筆帳！🐾');
+        } else if (action === 'nav') {
+          switchPage(target.dataset.page);
+        } else if (action === 'delete-exp') {
+          state.expenses = state.expenses.filter(x => x.id !== target.dataset.id);
+          saveState();
+          renderAll();
+          showToast('已刪除該筆明細');
+        } else if (action === 'settle-all') {
+          if (state.expenses.filter(x => !x.settled).length === 0) { showToast('目前沒有需要結清的帳目 ✨'); return; }
+          state.expenses.forEach(x => { x.settled = true; });
+          saveState();
+          renderAll();
+          showToast('已結清全部帳目！🎉');
+        } else if (action === 'set-ratio') {
+          state.ratioA = Number(target.dataset.ratio);
+          saveState();
+          renderAll();
+        } else if (action === 'set-icon') {
+          if (target.dataset.who === 'A') state.iconA = target.dataset.icon;
+          else state.iconB = target.dataset.icon;
+          saveState();
+          renderAll();
+        } else if (action === 'open-line-modal') {
+          copyTextSafe(buildLineReportText());
+          document.getElementById('line-modal').classList.add('open');
+        } else if (action === 'open-sync-modal') {
+          document.getElementById('sync-modal').classList.add('open');
+        } else if (action === 'close-modals') {
+          document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
+        } else if (action === 'send-line') {
+          copyTextSafe(buildLineReportText());
+          showToast('已複製對帳單並開啟 LINE 💬');
+        } else if (action === 'copy-line-text') {
+          copyTextSafe(document.getElementById('line-preview-text').value);
+          showToast('已複製對帳單文字 📋');
+        } else if (action === 'apply-room') {
+          const code = document.getElementById('room-code-input').value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+          if (code.length < 4) { showToast('請輸入 4～6 碼英文或數字代碼'); return; }
+          state.room = code;
+          saveState();
+          renderAll();
+          showToast(`已切換至房間 ${code}`);
+        } else if (action === 'copy-invite') {
+          const base = window.location.href.split('?')[0];
+          copyTextSafe(`🐱 一起來用「暹羅貓分帳本」記帳吧！
+房間代碼：${state.room}
+點擊開啟：${base}?room=${state.room}`);
+          showToast('已複製情侶邀請連結 🔗');
+        }
+      });
+
+      document.getElementById('ratio-slider').addEventListener('input', function (e) {
+        state.ratioA = Number(e.target.value);
+        saveState();
+        renderAll();
+      });
+      document.getElementById('input-name-a').addEventListener('input', function (e) {
+        state.nameA = e.target.value || '海豹小貓';
+        saveState();
+        renderAll();
+      });
+      document.getElementById('input-name-b').addEventListener('input', function (e) {
+        state.nameB = e.target.value || '藍眼小貓';
+        saveState();
+        renderAll();
+      });
+
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
